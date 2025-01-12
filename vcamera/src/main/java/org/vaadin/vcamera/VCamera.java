@@ -1,8 +1,5 @@
 package org.vaadin.vcamera;
 
-import java.io.OutputStream;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.vcamera.mediadevices.Device;
 import org.vaadin.vcamera.mediadevices.DevicesListedEvent;
+
+import java.io.OutputStream;
+import java.util.List;
 
 /**
  * A special video element that streams content from browser camera.
@@ -46,7 +46,7 @@ public class VCamera extends Component implements HasSize {
     }
 
     public void startRecording() {
-        if(!cameraOn) {
+        if (!cameraOn) {
             throw new IllegalStateException("Camera is not on");
         }
         recording = true;
@@ -66,7 +66,7 @@ public class VCamera extends Component implements HasSize {
     }
 
     public void stopRecording() {
-        if(!recording) {
+        if (!recording) {
             throw new IllegalStateException("Not recording");
         }
         getElement().executeJs("this.recorder.stop()");
@@ -86,7 +86,7 @@ public class VCamera extends Component implements HasSize {
     }
 
     public void takePicture() {
-        if(!cameraOn) {
+        if (!cameraOn) {
             throw new IllegalStateException("Camera is not on");
         }
         getElement().executeJs("""
@@ -133,39 +133,41 @@ public class VCamera extends Component implements HasSize {
     public void toggleFlashlight() {
         flashOn = !flashOn;
         getElement().executeJs("""
-                if(this.stream != null) {
-                    const track = this.stream.getVideoTracks()[0];
-            
-                    //Create image capture object and get camera capabilities
-                    const imageCapture = new ImageCapture(track)
-                    const photoCapabilities = imageCapture.getPhotoCapabilities().then(() => {
-                      track.applyConstraints({
-                        advanced: [{torch: %s}]
-                      });
-                    });
-                }
-            """.formatted(flashOn));
+                    if(this.stream != null) {
+                        const track = this.stream.getVideoTracks()[0];
+                
+                        //Create image capture object and get camera capabilities
+                        const imageCapture = new ImageCapture(track)
+                        const photoCapabilities = imageCapture.getPhotoCapabilities().then(() => {
+                          track.applyConstraints({
+                            advanced: [{torch: %s}]
+                          });
+                        });
+                    }
+                """.formatted(flashOn));
     }
 
     /**
      * Opens a specific videoinput device.
+     *
      * @param device device to open
      * @throws IllegalArgumentException if device is not of kind "videoinput"
      */
     public void openCamera(Device device) {
         String sourceId = device.getDeviceId();
-        if(device.getKind() != Device.DeviceKind.videoinput) {
-            throw new IllegalArgumentException("Device "+device+" is not a video device");
+        if (device.getKind() != Device.DeviceKind.videoinput) {
+            throw new IllegalArgumentException("Device " + device + " is not a video device");
         }
         openCamera("""
-                 {  video: {
-                      optional: [{sourceId: "%s"}]
-                 }}
-                 """.formatted(sourceId));
+                {  video: {
+                     optional: [{sourceId: "%s"}]
+                }}
+                """.formatted(sourceId));
     }
 
     /**
      * Reads available devices on the users browser
+     *
      * @param listener is called with a list of devices after Javascript execution completes
      */
     public void listDevices(ComponentEventListener<DevicesListedEvent> listener) {
@@ -211,7 +213,9 @@ public class VCamera extends Component implements HasSize {
             List<Device> videoDevices = e.getDevices().stream()
                     .filter(device -> device.getKind() == Device.DeviceKind.videoinput)
                     .toList();
-            openCamera(videoDevices.get(videoDevices.size() - 1));
+            if (!videoDevices.isEmpty()) {
+                openCamera(videoDevices.get(videoDevices.size() - 1));
+            }
         });
     }
 
